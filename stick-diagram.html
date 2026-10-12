@@ -1,0 +1,312 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>วาดภาพเส้นทีละขั้น</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@600;700&family=Sarabun:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 3D model (left) and drafting sheet (right) side by side, step card below; stacks on phones. Arrows link the two. */
+:root{
+  --bg:#EDF1F4; --panel:#FFFFFF; --ink:#1B2430; --muted:#566475; --line:#C9D2DB; --stage:#E2E8EE;
+  --paper:#FFFFFF; --sline:#1B2430; --sred:#C8402F; --accent:#1F5F99; --glow:#E8A400; --glowsoft:#FFE7A3;
+  --g2:#3E5470; --g6:#5F7590; --g4:#C8402F; --g5:#A93226; --pin:#B23A2C; --arm:#2E343C; --axis:#1F5F99;
+  --f-head:"Bai Jamjuree","Sarabun",system-ui,sans-serif; --f-body:"Sarabun",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161C; --panel:#19212A; --ink:#E5EBF1; --muted:#9AA7B5; --line:#2D3741; --stage:#0D1216;
+  --paper:#161D25; --sline:#E5EBF1; --sred:#F06A5A; --accent:#7FB4E8; --glow:#FFC23A; --glowsoft:#4A3B12;
+  --g2:#7F9CC2; --g6:#9DB2CC; --g4:#E5594A; --g5:#C7463A; --pin:#D9503F; --arm:#B9C2CC; --axis:#7FB4E8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161C; --panel:#19212A; --ink:#E5EBF1; --muted:#9AA7B5; --line:#2D3741; --stage:#0D1216;
+  --paper:#161D25; --sline:#E5EBF1; --sred:#F06A5A; --accent:#7FB4E8; --glow:#FFC23A; --glowsoft:#4A3B12;
+  --g2:#7F9CC2; --g6:#9DB2CC; --g4:#E5594A; --g5:#C7463A; --pin:#D9503F; --arm:#B9C2CC; --axis:#7FB4E8; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0;padding-inline:16px;padding-block:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px}
+h1{font-family:var(--f-head);font-size:1.25rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13.5px;margin:2px 0 0}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px}
+.pane{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:0;display:flex;flex-direction:column}
+.pane .tag{position:absolute;top:8px;left:10px;font-size:12.5px;color:var(--muted);background:color-mix(in srgb,var(--panel) 80%,transparent);padding:2px 8px;border-radius:6px;z-index:2;pointer-events:none}
+.stage{background:var(--stage)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.paper{background:var(--paper);align-items:center;justify-content:center;padding:26px 10px 8px}
+svg.st{width:100%;height:100%;max-height:100%;display:block}
+.badge{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-mono);font-size:12px;padding:1px 7px;border-radius:10px;color:#fff;pointer-events:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.35);z-index:1}
+.badge.on{outline:3px solid var(--glow);outline-offset:1px}
+.chip{position:absolute;transform:translate(14px,-50%);background:var(--glow);color:#1B1400;font-weight:600;font-size:13px;padding:3px 9px;border-radius:7px;pointer-events:none;white-space:nowrap;z-index:3}
+/* drafting sheet */
+.st .ln{fill:none;stroke-linecap:square;stroke-dasharray:1;stroke-dashoffset:1}
+.st .k{stroke:var(--sline);stroke-width:2.6} .st .r{stroke:var(--sred);stroke-width:2.6} .st .mesh{stroke:var(--sline);stroke-width:6}
+.st .axisln{stroke:var(--axis);stroke-width:1.4;stroke-dasharray:7 5;transform-box:fill-box;transform-origin:center top;transform:scaleY(0)}
+.st text{font-family:var(--f-mono);font-size:13px;fill:var(--sline);opacity:0}
+.st text.r{fill:var(--sred);stroke:none}
+.st text.ax{font-family:var(--f-body);font-size:11px;fill:var(--axis)}
+.st g.shown .ln{stroke-dashoffset:0} .st g.shown .axisln{transform:scaleY(1)} .st g.shown text{opacity:1}
+.st g.anim .ln{transition:stroke-dashoffset .9s ease var(--d,0s)}
+.st g.anim .axisln{transition:transform 1s ease}
+.st g.anim text{transition:opacity .4s ease var(--d,0s)}
+.st g.now{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
+#ov{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:5;overflow:visible}
+#ov path{fill:none;stroke:var(--glow);stroke-width:2.6;stroke-dasharray:7 5;animation:flow 1s linear infinite}
+#ov circle{fill:none;stroke:var(--glow);stroke-width:3}
+@keyframes flow{to{stroke-dashoffset:-12}}
+/* step card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:start}
+.card .no{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);letter-spacing:.04em}
+.card h2{font-family:var(--f-head);font-size:1.1rem;margin:0 0 4px}
+.card p{margin:0;max-width:72ch}
+.card .rule{margin-top:6px;font-size:13.5px;color:var(--muted)}
+.card .rule b{color:var(--ink)}
+.ctl{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+button{font-family:var(--f-body);font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.pri{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+.dots{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.dots button{font-family:var(--f-mono);font-size:12px;padding:2px 0;width:28px}
+.dots button.cur{background:var(--glowsoft);border-color:var(--glow)}
+.dots button.done{color:var(--muted)}
+.err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:var(--muted)}
+@media (max-width:820px){
+  body{display:block;height:auto} html{height:auto}
+  .main{grid-template-columns:minmax(0,1fr);margin-block:10px}
+  .stage{height:46vh;min-height:280px} .paper{height:auto;padding-top:28px}
+  svg.st{height:auto}
+  .card{grid-template-columns:minmax(0,1fr)} .ctl{justify-content:flex-start}
+}
+@media (prefers-reduced-motion: reduce){#ov path{animation:none} .st g.anim .ln,.st g.anim .axisln,.st g.anim text{transition:none}}
+</style>
+
+<header>
+  <h1>แปลงชุดเฟืองจริงเป็นภาพเส้น (แกนตั้งตามรูปโจทย์) · โจทย์ข้อ 1</h1>
+  <p class="sub">ซ้าย: โมเดลจากรูปโจทย์ (ลากหมุนได้) · ขวา: กระดาษที่วาดภาพเส้น · ลูกศรสีเหลืองชี้ว่าเส้นที่วาดมาจากชิ้นไหน</p>
+</header>
+
+<div class="main">
+  <div class="pane stage" id="stage"><span class="tag">โมเดล 3 มิติ</span><canvas id="cv"></canvas></div>
+  <div class="pane paper"><span class="tag">ภาพเส้น</span>
+    <svg class="st" id="st" viewBox="0 0 330 360" role="img" aria-label="ภาพเส้นของชุดเฟืองโจทย์ข้อ 1 แบบแกนตั้ง">
+      <text id="ph" x="180" y="180" text-anchor="middle" style="opacity:1;font-family:var(--f-body);font-size:13px;fill:var(--muted)">ภาพเส้นจะถูกวาดที่นี่ทีละเส้น ตั้งแต่ขั้นที่ 3</text>
+      <g id="g-axis" data-pt="36,330"><line class="axisln" x1="36" y1="6" x2="36" y2="352"/><text class="ax" x="30" y="350" text-anchor="start" transform="rotate(-90 30 350)">แกนกลาง</text></g>
+      <g id="g-s2" data-pt="66,126"><polyline class="ln k" pathLength="1" points="40,14 40,126 92,126"/><text x="64" y="118" text-anchor="middle" style="--d:.7s">2</text></g>
+      <g id="g-s6" data-pt="84,234"><polyline class="ln k" pathLength="1" points="40,346 40,234 128.4,234"/><text x="84" y="226" text-anchor="middle" style="--d:.7s">6</text></g>
+      <g id="g-p4" data-pt="214,126"><line class="ln r" pathLength="1" x1="92" y1="126" x2="248" y2="126"/><line class="ln r" pathLength="1" x1="92" y1="113" x2="92" y2="139" style="--d:.5s"/><line class="ln r" pathLength="1" x1="248" y1="113" x2="248" y2="139" style="--d:.5s"/><text class="r" x="214" y="117" text-anchor="middle" style="--d:.8s">4</text></g>
+      <g id="g-p5" data-pt="194,234"><line class="ln r" pathLength="1" x1="128.4" y1="234" x2="211.6" y2="234"/><line class="ln r" pathLength="1" x1="128.4" y1="221" x2="128.4" y2="247" style="--d:.5s"/><line class="ln r" pathLength="1" x1="211.6" y1="221" x2="211.6" y2="247" style="--d:.5s"/><text class="r" x="194" y="225" text-anchor="middle" style="--d:.8s">5</text></g>
+      <g id="g-pin" data-pt="170,180"><line class="ln r" pathLength="1" x1="170" y1="45" x2="170" y2="315"/></g>
+      <g id="g-mesh" data-pt="92,126" data-pt2="128.4,234"><line class="ln mesh" pathLength="1" x1="92" y1="110" x2="92" y2="142"/><line class="ln mesh" pathLength="1" x1="128.4" y1="218" x2="128.4" y2="250" style="--d:.4s"/></g>
+      <g id="g-arm" data-pt="120,45"><polyline class="ln k" pathLength="1" points="46,45 271,45 271,315 46,315"/>
+        <line class="ln k" pathLength="1" x1="46" y1="35" x2="46" y2="55" style="--d:.8s"/><line class="ln k" pathLength="1" x1="46" y1="305" x2="46" y2="325" style="--d:.8s"/>
+        <line class="ln k" pathLength="1" x1="163" y1="35" x2="163" y2="55" style="--d:.9s"/><line class="ln k" pathLength="1" x1="177" y1="35" x2="177" y2="55" style="--d:.9s"/>
+        <line class="ln k" pathLength="1" x1="163" y1="305" x2="163" y2="325" style="--d:.9s"/><line class="ln k" pathLength="1" x1="177" y1="305" x2="177" y2="325" style="--d:.9s"/>
+        <text x="278" y="184" style="--d:1s">3 (arm)</text></g>
+    </svg>
+  </div>
+</div>
+
+<section class="card" aria-live="polite">
+  <div><div class="no" id="sNo"></div><h2 id="sTitle"></h2><p id="sText"></p><p class="rule" id="sRule"></p></div>
+  <div class="ctl">
+    <button id="bPrev">‹ ย้อน</button>
+    <button id="bPlay">▶ เล่นอัตโนมัติ</button>
+    <button id="bNext" class="pri">ถัดไป ›</button>
+    <button id="bRestart">↺ เริ่มใหม่</button>
+  </div>
+  <div class="dots" id="dots" aria-label="ไปที่ขั้น"></div>
+</section>
+
+<svg id="ov" aria-hidden="true"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--glow);stroke:none;animation:none"/></marker></defs><g id="ovg"></g></svg>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=id=>document.getElementById(id), PI=Math.PI;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- steps ----------
+const STEPS=[
+ {t:'ภาพจริงจากโจทย์', view:'pic', hl:[], draw:null, arrows:[],
+  d:'นี่คือชุดเฟืองในโจทย์ข้อ 1 วางแบบเดียวกับรูป: เพลากลางตั้งอยู่ทางซ้าย เฟือง 2 กับ 4 อยู่แถวบน เฟือง 6 กับ 5 อยู่แถวล่าง แผ่นบนกับแผ่นล่างคือแขน 3 ลองลากหมุนดูก่อน',
+  r:'เป้าหมาย: เปลี่ยนชิ้นส่วนทุกชิ้นให้เป็นเส้น โดยยังบอกได้ว่าใครอยู่บนแกนไหน และใครขบกับใคร'},
+ {t:'หาแกนกลาง', view:'pic', hl:['axis','2','6'], chip:['axis','แกนกลาง'], draw:null, arrows:[],
+  d:'เส้นประคือแกนกลาง เฟือง 2 และ 6 หมุนรอบเส้นนี้ ส่วนเฟือง 4 และ 5 อยู่บนเพลาอีกอันทางขวา ซึ่งโคจรรอบแกนกลางไปกับแขน',
+  r:'<b>กฎ:</b> ทุกเส้นในภาพเส้นวัดจากแกนกลาง ต้องหาแกนนี้ให้เจอก่อนเสมอ'},
+ {t:'ผ่าครึ่ง ดูแค่ฝั่งขวา', view:'stick', hl:['axis'], chip:['axis','แกนกลาง'], draw:'axis', arrows:[['axis','g-axis']],
+  d:'ไม่ต้องหมุนรูป แกนกลางตั้งอยู่ซ้ายสุดเหมือนรูปโจทย์ แล้วผ่าดูแค่ครึ่งขวา (ฝั่งที่มี planet) เพราะอีกครึ่งเหมือนกันทุกอย่าง',
+  r:'<b>กฎ:</b> ยิ่งไปทางขวาในภาพเส้น = ยิ่งไกลจากแกน · บน-ล่าง = ตำแหน่งตามแนวเพลา'},
+ {t:'เฟือง 2 → sun gear', view:'stick', hl:['2'], chip:['2','เฟือง 2 (20T)'], draw:'s2', arrows:[['2','g-s2']],
+  d:'เฟือง 2 อยู่บนแกนกลาง จึงวาดเป็นเส้นสีดำ: เส้นตั้งตามแกนคือเพลาของมัน (ออกด้านบน) แล้วเส้นนอนยื่นไปทางขวาเท่ารัศมีของเฟือง 20 ฟันเล็ก เส้นจึงสั้น',
+  r:'<b>กฎ:</b> เฟืองบนแกนกลาง = เส้นดำ เริ่มจากแกน ยาวเท่ารัศมี'},
+ {t:'เฟือง 6 → sun gear', view:'stick', hl:['6'], chip:['6','เฟือง 6 (34T)'], draw:'s6', arrows:[['6','g-s6']],
+  d:'เฟือง 6 ก็อยู่บนแกนกลาง จึงเป็นเส้นดำเหมือนกัน เพลาออกด้านล่าง 34 ฟันใหญ่กว่าเฟือง 2 เส้นนอนจึงยาวกว่า (34 ได้จาก N₂ + N₄ = N₅ + N₆)',
+  r:'<b>กฎ:</b> ความยาวของเส้นบอกขนาดเฟือง เฟืองใหญ่ = เส้นยาว'},
+ {t:'เฟือง 4 → planet gear', view:'stick', hl:['4'], chip:['4','เฟือง 4 (30T)'], draw:'p4', arrows:[['4','g-p4']],
+  d:'เฟือง 4 ไม่ได้อยู่บนแกนกลาง มันโคจรไปกับแขน จึงวาดเป็นสีแดง เป็นตัว I นอนทั้งตัว (ความยาว = เส้นผ่านศูนย์กลาง) ปลายซ้ายของ 4 แตะปลายขวาของเฟือง 2 พอดี',
+  r:'<b>กฎ:</b> planet = ตัว I สีแดง ลอยห่างจากแกน ไม่แตะแกน'},
+ {t:'เฟือง 5 → planet gear', view:'stick', hl:['5'], chip:['5','เฟือง 5 (16T)'], draw:'p5', arrows:[['5','g-p5']],
+  d:'เฟือง 5 ก็โคจรไปกับแขน จึงเป็นตัว I สีแดง ปลายซ้ายแตะเฟือง 6 สังเกตว่าจุดกลางของ 4 และ 5 อยู่ห่างแกนเท่ากัน เพราะอยู่บนเพลาเดียวกัน',
+  r:'<b>เช็ก:</b> ตัว I ของ planet บนเพลาเดียวกัน ต้องมีจุดกลางห่างแกนเท่ากันเสมอ'},
+ {t:'เพลาของ 4 กับ 5', view:'stick', hl:['pin','4','5'], chip:['pin','เพลา 4–5'], draw:'pin', arrows:[['pin','g-pin']],
+  d:'เฟือง 4 กับ 5 ยึดอยู่บนเพลาเดียวกัน จึงต่อด้วยเส้นแดงแนวตั้งที่ผ่านกลางตัว I ทั้งสอง แปลว่าสองตัวนี้หมุนด้วยความเร็วเท่ากัน (ω₄ = ω₅)',
+  r:'<b>กฎ:</b> เส้นแดงที่เชื่อม planet 2 ตัว = อยู่เพลาเดียวกัน'},
+ {t:'จุดที่ฟันขบกัน', view:'stick', hl:['2','4','5','6'], chip:['mc','2 ขบ 4 · 6 ขบ 5'], nobadge:true, draw:'mesh', arrows:[['m24','g-mesh',1],['m56','g-mesh',2]],
+  d:'ใส่ขีดหนาสั้น ๆ ตรงที่ปลายเส้นแตะกัน: 2 ขบกับ 4 และ 6 ขบกับ 5 ทั้งสองคู่ sun ขบ planet จากด้านใน (ฝั่งใกล้แกน) จึงเป็นการขบแบบ external',
+  r:'<b>กฎ:</b> ขีดหนา = ฟันขบกัน · ขบจากด้านใน = sun (external, เครื่องหมาย −) · ครอบจากด้านนอก = ring (internal, +)'},
+ {t:'แขน 3 (arm)', view:'stick', hl:['3'], chip:['3','แขน 3'], draw:'arm', arrows:[['3','g-arm']],
+  d:'แขน 3 คือชิ้นที่ถือเพลา 4–5 วาดเป็นเส้นดำนอนจากแกนออกไปหาเพลาแดง ขีดคู่ที่คร่อมเพลาแดงคือแบริ่ง (เพลาหมุนได้ในแขน) แผ่นบนกับแผ่นล่างเป็นชิ้นเดียวกัน จึงต่อกันด้วยเส้นด้านขวา',
+  r:'หมายเหตุ: รูปโจทย์ไม่ได้วาดตัวเชื่อมแผ่นบน-ล่าง ผมใส่ไว้ในโมเดลให้เห็นว่าเป็นแขนชิ้นเดียว'},
+ {t:'เสร็จ: ตอบข้อ 1.1', view:'stick', hl:[], draw:null, arrows:[], final:true,
+  d:'ภาพเส้นเสร็จแล้ว คำตอบข้อ 1.1: Sun gear = 2 และ 6 · Planet gear = 4 และ 5 · Arm = 3',
+  r:'ถ้าหมุนภาพนี้ 90° ทวนเข็มนาฬิกา จะได้แบบแกนนอนในสไลด์ 56 · ในรูปโจทย์แขนใช้เลข 3 ถ้าจะเขียน "arm = 1" แบบสไลด์ ให้เขียนกำกับให้ชัด · ลองปิดหน้านี้แล้ววาดเองอีกครั้ง'}
+];
+const DRAW_ORDER=STEPS.map(s=>s.draw);
+
+// ---------- 3D ----------
+const stage=$('stage'), cv=$('cv');
+let renderer=null;
+try{ renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.localClippingEnabled=true; }
+catch(e){ stage.insertAdjacentHTML('beforeend','<div class="err">เบราว์เซอร์นี้แสดงภาพ 3 มิติไม่ได้ แต่ภาพเส้นด้านขวายังใช้ได้</div>'); }
+const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(36,1,0.1,300);
+const controls=renderer?new OrbitControls(camera,cv):null; if(controls) controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x445566,1.15));
+const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(-10,14,16); scene.add(dl);
+const dl2=new THREE.DirectionalLight(0xffffff,.6); dl2.position.set(12,-6,10); scene.add(dl2);
+
+const M=.2, W=1.0, R=5;            // module, face width, planet-shaft distance
+const N={2:20,4:30,5:16,6:34}, r=n=>M*n/2;
+const Y2=1.2, Y6=-1.2, YA=3;       // local axial positions (local Y = shaft axis, like the printed figure)
+const root=new THREE.Group(); scene.add(root);
+const mats={}, meshes=[];
+const COL={'2':'--g2','6':'--g6','4':'--g4','5':'--g5','pin':'--pin','3':'--arm'};
+const mat=p=>mats[p]=mats[p]||new THREE.MeshStandardMaterial({metalness:.3,roughness:.5,side:THREE.DoubleSide});
+const add=(geo,p,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat(p)); m.position.set(x,y,z); m.userData.part=p; root.add(m); meshes.push(m); return m;};
+function teethShape(n,tipOut){ const s=new THREE.Shape(), rp=r(n), p=2*PI/n, a=rp-1.25*M, b=rp+M; let first=true;
+  for(let k=0;k<n;k++){const c=k*p; for(const [rad,ang] of [[a,c-.25*p],[b,c-.12*p],[b,c+.12*p],[a,c+.25*p],[a,c+.5*p]]){
+    const x=rad*Math.cos(ang), y=rad*Math.sin(ang); first?(s.moveTo(x,y),first=false):s.lineTo(x,y);}}
+  s.closePath(); const h=new THREE.Path(); h.absarc(0,0,.38,0,2*PI,true); s.holes.push(h); return s; }
+function gearGeo(n){ const g=new THREE.ExtrudeGeometry(teethShape(n),{depth:W,bevelEnabled:false,curveSegments:6}); g.translate(0,0,-W/2); g.rotateX(-PI/2); return g; }
+function plateGeo(len){ const s=new THREE.Shape(), a=.9, b=.75; s.absarc(0,0,a,PI/2,PI*1.5,false); s.lineTo(len,-b); s.absarc(len,0,b,-PI/2,PI/2,false); s.lineTo(0,a);
+  const h=new THREE.Path(); h.absarc(0,0,.4,0,2*PI,true); s.holes.push(h); const h2=new THREE.Path(); h2.absarc(R,0,.32,0,2*PI,true); s.holes.push(h2);
+  const g=new THREE.ExtrudeGeometry(s,{depth:.3,bevelEnabled:false,curveSegments:20}); g.translate(0,0,-.15); g.rotateX(-PI/2); return g; }
+const cyl=(rad,y0,y1,p,x=0)=>add(new THREE.CylinderGeometry(rad,rad,y1-y0,28),p,x,(y0+y1)/2,0);
+
+// central gears 2 (shaft up) and 6 (shaft down)
+const gm2=add(gearGeo(N[2]),'2',0,Y2); cyl(.36,Y2,6.2,'2'); cyl(.62,Y2-W/2,Y2+W/2,'2');
+const gm6=add(gearGeo(N[6]),'6',0,Y6); cyl(.36,-7,Y6,'6'); cyl(.62,Y6-W/2,Y6+W/2,'6');
+// compound planet 4-5 on one shaft
+const gm4=add(gearGeo(N[4]),'4',R,Y2), gm5=add(gearGeo(N[5]),'5',R,Y6);
+cyl(.3,-YA-.25,YA+.25,'pin',R); cyl(.6,Y6-W/2,Y2+W/2,'pin',R);
+// tooth phase: tooth of the sun sits in a gap of the planet on the contact line
+gm4.rotation.y=PI-.5*(2*PI/N[4]); gm5.rotation.y=PI-.5*(2*PI/N[5]);
+// arm 3: two plates + outer tie, free on the central shafts
+const tieX=R+r(N[4])+1.1;
+add(plateGeo(tieX),'3',0,YA); add(plateGeo(tieX),'3',0,-YA); cyl(.38,-YA,YA,'3',tieX);
+// centre axis (dashed)
+const axMat=new THREE.MeshBasicMaterial({depthTest:false,transparent:true});
+const axLine=new THREE.Group(); axLine.renderOrder=5; root.add(axLine);
+const dash=new THREE.CylinderGeometry(.09,.09,.55,8);
+for(let y=-8.5;y<7.5;y+=.95){ const d=new THREE.Mesh(dash,axMat); d.position.set(0,y,0); d.renderOrder=5; axLine.add(d); }
+
+// anchors (local coords, on the cut plane z=0)
+const anc={}; const A=(k,x,y)=>{const o=new THREE.Object3D(); o.position.set(x,y,0); root.add(o); anc[k]=o;};
+A('axis',0,4.6); A('2',1.5,Y2); A('6',2.6,Y6); A('4',R+2.1,Y2); A('5',R+1.25,Y6); A('pin',R,0); A('3',2.6,YA); A('m24',r(N[2]),Y2); A('m56',r(N[6]),Y6); A('mc',R+1.5,4.3);
+const BADGE={'2':'2 · 20T','4':'4 · 30T','5':'5 · 16T','6':'6 · 34T','3':'3 แขน'};
+const badges={}; for(const k in BADGE){const b=document.createElement('div'); b.className='badge'; b.textContent=BADGE[k]; stage.appendChild(b); badges[k]=b;}
+const chip=document.createElement('div'); chip.className='chip'; chip.hidden=true; stage.appendChild(chip);
+
+// clipping for the half-section view (world, after turning the axis horizontal)
+const cutFront=new THREE.Plane(new THREE.Vector3(0,0,-1),0), cutLow=new THREE.Plane(new THREE.Vector3(1,0,0),.02);
+
+// ---------- state ----------
+let clipOn=false, noBadge=false, step=0, rotT=0, rotGoal=0, userCam=false, playing=false, playTimer=null, hl=new Set(), isFinal=false;
+const CAM={pic:{p:new THREE.Vector3(9,5,25),t:new THREE.Vector3(2.4,-.3,0)}, stick:{p:new THREE.Vector3(5,2,23),t:new THREE.Vector3(4,-.3,0)}};
+let camGoal=CAM.pic;
+if(controls){ controls.addEventListener('start',()=>{userCam=true;}); }
+
+function applyColors(){
+  scene.background=new THREE.Color(css('--stage'));
+  for(const p in mats){ const m=mats[p], c=new THREE.Color(css(COL[p])); m.color.copy(c);
+    const ghost=hl.size>0&&!hl.has(p); m.transparent=ghost; m.opacity=ghost?.2:1; m.depthWrite=!ghost; m.needsUpdate=true; }
+  axMat.color=new THREE.Color(css('--axis'));
+  for(const k in badges){ badges[k].style.background=css(COL[k]); badges[k].classList.toggle('on',hl.has(k)); }
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyColors);
+new MutationObserver(applyColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+// ---------- drafting sheet ----------
+function renderSheet(animate){
+  DRAW_ORDER.forEach((id,i)=>{ if(!id) return; const g=$('g-'+id);
+    g.classList.remove('anim','now');
+    if(i<step||(i===step&&!animate)) g.classList.add('shown');
+    else if(i===step){ g.classList.remove('shown'); g.getBoundingClientRect(); requestAnimationFrame(()=>{ g.classList.add('anim','shown'); }); }
+    else g.classList.remove('shown');
+    if(i===step) g.classList.add('now');
+  });
+}
+
+// ---------- step UI ----------
+$('dots').innerHTML=STEPS.map((s,i)=>`<button data-i="${i}" aria-label="ขั้น ${i+1}: ${s.t}">${i+1}</button>`).join('');
+$('dots').addEventListener('click',e=>{const b=e.target.closest('[data-i]'); if(b) go(+b.dataset.i);});
+function go(i,fromPlay){
+  step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step];
+  if(!fromPlay) stopPlay();
+  $('sNo').textContent=`ขั้น ${step+1} / ${STEPS.length}`; $('sTitle').textContent=s.t; $('sText').textContent=s.d; $('sRule').innerHTML=s.r;
+  $('bPrev').disabled=step===0; $('bNext').disabled=step===STEPS.length-1;
+  document.querySelectorAll('#dots button').forEach((b,k)=>{b.classList.toggle('cur',k===step); b.classList.toggle('done',k<step);});
+  hl=new Set(s.hl); isFinal=!!s.final; rotGoal=0; clipOn=s.view==='stick'; noBadge=!!s.nobadge; camGoal=CAM[s.view]; userCam=false;
+  axLine.visible=step>=1; $('ph').style.display=step<2?'':'none';
+  if(s.chip){chip.textContent=s.chip[1]; chip.dataset.k=s.chip[0]; chip.hidden=false;} else chip.hidden=true;
+  applyColors(); renderSheet(!reduce);
+}
+$('bPrev').onclick=()=>go(step-1); $('bNext').onclick=()=>go(step+1); $('bRestart').onclick=()=>go(0);
+function stopPlay(){ playing=false; clearTimeout(playTimer); $('bPlay').textContent='▶ เล่นอัตโนมัติ'; }
+function tick(){ if(!playing) return; if(step>=STEPS.length-1){stopPlay(); return;} go(step+1,true); playTimer=setTimeout(tick,step===1?5200:4600); }
+$('bPlay').onclick=()=>{ if(playing){stopPlay(); return;} playing=true; $('bPlay').textContent='⏸ หยุด'; if(step>=STEPS.length-1) go(0,true); playTimer=setTimeout(tick,3800); };
+addEventListener('keydown',e=>{ if(e.target.closest('input,textarea'))return; if(e.key==='ArrowRight')go(step+1); if(e.key==='ArrowLeft')go(step-1); });
+
+// ---------- arrows overlay ----------
+const ovg=$('ovg'), st=$('st'), v=new THREE.Vector3();
+function screenOf3D(k){ const rc=cv.getBoundingClientRect(); anc[k].getWorldPosition(v); v.project(camera);
+  if(v.z>1) return null; return [rc.left+(v.x+1)/2*rc.width, rc.top+(1-v.y)/2*rc.height]; }
+function screenOfSvg(gid,which){ const g=$(gid); const raw=(which===2?g.dataset.pt2:g.dataset.pt).split(',').map(Number);
+  const pt=st.createSVGPoint(); pt.x=raw[0]; pt.y=raw[1]; const q=pt.matrixTransform(st.getScreenCTM()); return [q.x,q.y]; }
+function drawArrows(){
+  const s=STEPS[step]; let html='';
+  if(renderer && Math.abs(rotT-rotGoal)<.02){
+    for(const [k,gid,which] of s.arrows){ const a=screenOf3D(k), b=screenOfSvg(gid,which); if(!a||!b) continue;
+      const mx=(a[0]+b[0])/2, my=Math.min(a[1],b[1])-Math.max(40,Math.abs(a[0]-b[0])*.18);
+      html+=`<circle cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="9"/><path d="M${a[0].toFixed(1)},${a[1].toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${b[0].toFixed(1)},${b[1].toFixed(1)}" marker-end="url(#ah)"/>`; }
+  }
+  ovg.innerHTML=html;
+}
+
+// ---------- loop ----------
+function resize(){ if(!renderer)return; const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h)return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+camera.position.copy(CAM.pic.p); if(controls){controls.target.copy(CAM.pic.t); controls.update();}
+let last=performance.now();
+function frame(t){
+  requestAnimationFrame(frame); const dt=Math.min((t-last)/1000,.05); last=t;
+  if(!renderer){ drawArrows(); return; }
+  // turn the axis from vertical (printed figure) to horizontal (stick diagram)
+  const spd=reduce?99:1/1.3; rotT+=Math.sign(rotGoal-rotT)*Math.min(Math.abs(rotGoal-rotT),spd*dt);
+  const e=rotT<.5?2*rotT*rotT:1-Math.pow(-2*rotT+2,2)/2; root.rotation.z=e*PI/2;
+  renderer.clippingPlanes=clipOn?[cutFront,cutLow]:[];
+  // camera: glide to the step's view unless the user is dragging
+  if(!userCam){ const f=Math.max(.8,1.05/camera.aspect), k=1-Math.exp(-dt*(reduce?50:3));
+    camera.position.lerp(camGoal.p.clone().sub(camGoal.t).multiplyScalar(f).add(camGoal.t),k); controls.target.lerp(camGoal.t,k); }
+  // pulse the highlighted parts
+  const pulse=.35+.25*Math.sin(t/160); const gl=new THREE.Color(css('--glow'));
+  for(const p in mats){ const on=hl.has(p); mats[p].emissive.copy(on?gl:new THREE.Color(0)); mats[p].emissiveIntensity=on?pulse:0; }
+  axMat.opacity=hl.has('axis')?.7+.3*Math.sin(t/160):.85;
+  controls.update(); renderer.render(scene,camera);
+  const rc=stage.getBoundingClientRect();
+  for(const k in badges){ anc[k].getWorldPosition(v); v.project(camera); const b=badges[k]; b.hidden=v.z>1||noBadge||(!chip.hidden&&chip.dataset.k===k); b.style.left=((v.x+1)/2*rc.width)+'px'; b.style.top=((1-v.y)/2*rc.height)+'px'; }
+  if(!chip.hidden){ anc[chip.dataset.k].getWorldPosition(v); v.project(camera); chip.style.left=((v.x+1)/2*rc.width)+'px'; chip.style.top=((1-v.y)/2*rc.height)+'px'; }
+  drawArrows();
+}
+go(0); requestAnimationFrame(frame);
+</script>
+
+</body></html>
